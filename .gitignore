@@ -13,3 +13,5 @@ package-lock.json
 frontend/package-lock.json
 backend/package-lock.json
 frontend/@/
+frontend/shared-local-instance.db
+*.tsbuildinfo
