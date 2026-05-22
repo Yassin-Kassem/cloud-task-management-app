@@ -8,8 +8,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, User, Send, Paperclip } from 'lucide-react';
-import { commentApi } from '@/lib/api';
+import { Calendar, Clock, User, Send, Paperclip, Trash2 } from 'lucide-react';
+import { commentApi, taskApi } from '@/lib/api';
 import ImageUpload from '@/components/tasks/ImageUpload';
 import { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from '@/lib/constants';
 import type { Task, Comment, ActivityLogEntry } from '@/types';
@@ -58,6 +58,21 @@ export default function TaskModal({ task, open, onClose, onTaskUpdate }: Props) 
     }
   };
 
+  const handleDelete = async () => {
+    if (!task) return;
+    if (!window.confirm(`Delete task "${task.title}"? This cannot be undone.`)) return;
+    try {
+      await taskApi.delete(task.taskId);
+      toast.success('Task deleted');
+      onClose();
+      onTaskUpdate?.();
+    } catch {
+      toast.error('Failed to delete task');
+    }
+  };
+
+  const isManager = user?.role === 'MANAGER';
+
   if (!task) return null;
 
   const isOverdue = task.deadline && new Date(task.deadline) < new Date() && task.status !== 'DONE';
@@ -101,6 +116,19 @@ export default function TaskModal({ task, open, onClose, onTaskUpdate }: Props) 
               Created {new Date(task.createdAt).toLocaleDateString()}
             </span>
           </div>
+
+          {isManager && (
+            <div className="flex justify-end">
+              <button
+                onClick={handleDelete}
+                title="Delete this task"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete task
+              </button>
+            </div>
+          )}
         </DialogHeader>
 
         <Separator className="mt-4" />

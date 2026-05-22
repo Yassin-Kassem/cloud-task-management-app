@@ -68,7 +68,7 @@ export default function KanbanPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-hidden p-6">
+        <div className="min-h-0 flex-1 overflow-hidden p-6">
           {loading ? (
             <div className="flex h-full items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />

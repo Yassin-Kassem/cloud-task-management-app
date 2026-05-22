@@ -25,7 +25,7 @@ interface Props {
 
 export default function KanbanColumn({ status, tasks, onTaskClick }: Props) {
   return (
-    <div className="flex flex-col rounded-xl bg-muted/40 p-3">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-muted/40 p-3">
       <div className="mb-3 flex items-center gap-2 px-1">
         <div className={`h-2 w-2 rounded-full ${DOT_COLORS[status]}`} />
         <h3 className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ${STATUS_COLORS[status]}`}>
@@ -41,7 +41,7 @@ export default function KanbanColumn({ status, tasks, onTaskClick }: Props) {
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`flex-1 space-y-2.5 overflow-y-auto rounded-lg p-1 transition-colors duration-200 scrollbar-thin ${
+            className={`min-h-0 flex-1 space-y-2.5 overflow-y-auto rounded-lg p-1 transition-colors duration-200 scrollbar-thin ${
               snapshot.isDraggingOver ? 'bg-primary/5' : ''
             }`}
             style={{ minHeight: '120px' }}
