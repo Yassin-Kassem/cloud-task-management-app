@@ -19,9 +19,7 @@ Availability Zones behind an Application Load Balancer and CloudFront.
 
 ## 🎥 Demo Video
 
-> ### 👉 **[ REPLACE-WITH-DEMO-VIDEO-LINK ]**
-
-<!-- TODO: replace the line above with the demo video URL (YouTube / Google Drive). -->
+> ### 👉 **[Watch the demo](https://drive.google.com/file/d/1QPq1ZaLKvzdsm4R9S64tSlY6fQ3MEvCi/view?usp=sharing)**
 
 ---
 
