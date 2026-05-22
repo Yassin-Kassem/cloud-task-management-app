@@ -54,4 +54,18 @@ export const UserModel = {
     api.get<{ userId: string; displayName: string; teamId: string; role: string }[]>('/users').then((r) => r.data),
 };
 
+export const imageApi = {
+  upload: (taskId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return api.post<Task>(`/tasks/${taskId}/image`, formData, {
+      headers: { 'Content-Type': undefined },
+    }).then((r) => r.data);
+  },
+  delete: (taskId: string) =>
+    api.delete(`/tasks/${taskId}/image`),
+  getUrls: (taskId: string) =>
+    api.get<{ originalUrl: string; thumbnailUrl: string }>(`/tasks/${taskId}/image-url`).then((r) => r.data),
+};
+
 export default api;

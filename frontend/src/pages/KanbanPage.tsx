@@ -87,6 +87,16 @@ export default function KanbanPage() {
         task={selectedTask}
         open={!!selectedTask}
         onClose={() => setSelectedTask(null)}
+        onTaskUpdate={() => {
+          const params = teamFilter ? { teamId: teamFilter } : undefined;
+          taskApi.getAll(params).then((updated) => {
+            setTasks(updated);
+            if (selectedTask) {
+              const refreshed = updated.find((t) => t.taskId === selectedTask.taskId);
+              if (refreshed) setSelectedTask(refreshed);
+            }
+          });
+        }}
       />
 
       <TaskForm

@@ -15,3 +15,5 @@ backend/package-lock.json
 frontend/@/
 frontend/shared-local-instance.db
 *.tsbuildinfo
+# Lambda deployment bundles — build artifacts, rebuilt from index.ts
+lambdas/**/*.zip

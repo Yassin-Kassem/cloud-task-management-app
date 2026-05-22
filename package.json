@@ -6,6 +6,7 @@
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
     "create-tables": "npx tsx scripts/create-tables.ts",
+    "create-tables-aws": "npx tsx scripts/create-tables-aws.ts",
     "seed": "npx tsx scripts/seed.ts"
   },
   "devDependencies": {

@@ -8,8 +8,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, User, Send } from 'lucide-react';
+import { Calendar, Clock, User, Send, Paperclip } from 'lucide-react';
 import { commentApi } from '@/lib/api';
+import ImageUpload from '@/components/tasks/ImageUpload';
 import { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from '@/lib/constants';
 import type { Task, Comment, ActivityLogEntry } from '@/types';
 import { useAuth } from '@/context/AuthContext';
@@ -27,9 +28,10 @@ interface Props {
   task: Task | null;
   open: boolean;
   onClose: () => void;
+  onTaskUpdate?: () => void;
 }
 
-export default function TaskModal({ task, open, onClose }: Props) {
+export default function TaskModal({ task, open, onClose, onTaskUpdate }: Props) {
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [activity, setActivity] = useState<ActivityLogEntry[]>([]);
@@ -107,6 +109,10 @@ export default function TaskModal({ task, open, onClose }: Props) {
           <TabsList className="mx-6 w-fit">
             <TabsTrigger value="comments">Comments ({comments.length})</TabsTrigger>
             <TabsTrigger value="activity">Activity ({activity.length})</TabsTrigger>
+            <TabsTrigger value="attachments">
+              <Paperclip className="mr-1 inline h-3.5 w-3.5" />
+              Attachments
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="comments" className="flex flex-1 flex-col overflow-hidden px-6 pb-6">
@@ -175,6 +181,16 @@ export default function TaskModal({ task, open, onClose }: Props) {
                   </div>
                 </div>
               ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="attachments" className="px-6 pb-6">
+            <div className="py-3">
+              <ImageUpload
+                taskId={task.taskId}
+                imageKey={task.imageKey}
+                onImageChange={() => onTaskUpdate?.()}
+              />
             </div>
           </TabsContent>
         </Tabs>
