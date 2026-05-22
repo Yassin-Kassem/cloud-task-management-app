@@ -45,7 +45,8 @@ export default function TeamsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, teamName: string) => {
+    if (!window.confirm(`Delete team "${teamName}"? Members will be unassigned.`)) return;
     try {
       await teamApi.delete(id);
       setTeams((prev) => prev.filter((t) => t.teamId !== id));
@@ -134,8 +135,9 @@ export default function TeamsPage() {
                       )}
                       {isManager && (
                         <button
-                          onClick={() => handleDelete(t.teamId)}
-                          className="cursor-pointer rounded-md p-1.5 text-muted-foreground opacity-0 transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+                          onClick={() => handleDelete(t.teamId, t.name)}
+                          title="Delete team"
+                          className="cursor-pointer rounded-md p-1.5 text-muted-foreground transition-all hover:bg-red-50 hover:text-red-600"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
