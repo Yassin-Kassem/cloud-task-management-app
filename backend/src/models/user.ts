@@ -53,10 +53,18 @@ export class UserModel {
     const existing = await UserModel.getById(userId);
     if (!existing) return;
 
+    // DynamoDB rejects empty strings in GSI key attributes (teamId-index PK).
+    // Strip empty values so "remove from team" works — the user simply drops
+    // out of the GSI rather than carrying an invalid empty teamId.
+    const merged: Record<string, any> = { ...existing, ...updates };
+    for (const k of Object.keys(merged)) {
+      if (merged[k] === '') delete merged[k];
+    }
+
     await dynamoDb.send(
       new PutCommand({
         TableName: TABLE_NAMES.USERS,
-        Item: { ...existing, ...updates },
+        Item: merged,
       })
     );
   }
