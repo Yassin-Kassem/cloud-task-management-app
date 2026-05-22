@@ -42,17 +42,18 @@ with Diagram(
     frontend = S3("S3\nReact SPA")
 
     with Cluster("VPC  10.0.0.0/16  —  eu-central-1"):
+        vpc = VPC("VPC")
         igw = InternetGateway("Internet Gateway")
 
         with Cluster("Public subnets  (AZ-a + AZ-b)"):
             alb = ELB("Application\nLoad Balancer")
-            nat = EC2("NAT Instance")
+            nat = EC2("EC2 — NAT Instance")
 
         with Cluster("Private subnets  (AZ-a + AZ-b)"):
             with Cluster("Auto Scaling Group  (min 2 / max 4)"):
                 api = [
-                    EC2("Express API\nAZ-a"),
-                    EC2("Express API\nAZ-b"),
+                    EC2("EC2 — Express API\n(AZ-a)"),
+                    EC2("EC2 — Express API\n(AZ-b)"),
                 ]
 
     with Cluster("Data & Auth"):
@@ -80,6 +81,7 @@ with Diagram(
     cdn >> Edge(label="default  /*") >> frontend
     cdn >> Edge(label="/api/*") >> alb
     alb >> Edge(label="port 3001") >> api
+    vpc - Edge(style="dashed", label="contains") - igw
     nat >> igw
 
     # --- backend -> AWS services ---------------------------------------
