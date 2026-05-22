@@ -270,7 +270,7 @@ EC2 console → **Load Balancers → Create load balancer → Application Load B
 - Create.
 
 After it provisions, copy the ALB **DNS name**
-(`mini-jira-alb-…eu-central-1.elb.amazonaws.com`) — CloudFront needs it.
+(`mini-jira-alb-1363062914.eu-central-1.elb.amazonaws.com`) — CloudFront needs it.
 
 ### D3. Launch Template
 
@@ -385,63 +385,100 @@ aws s3 sync frontend/dist/ s3://mini-jira-frontend-yassin2026/ --delete
 
 ## Part F — CloudFront distribution
 
-CloudFront console → **Create distribution**.
+CloudFront serves your React app worldwide over HTTPS **and** proxies `/api/*`
+calls to the ALB — so the whole app lives on **one domain**, no CORS needed.
 
-### F1. First origin — S3 frontend (default)
+> ⚠️ **The wizard only creates ONE origin** (the frontend). The ALB origin, the
+> `/api/*` route, and the SPA error pages are added **afterward** by editing the
+> distribution. Five phases — do them in order.
 
-- **Origin domain**: paste the **S3 website endpoint** from E3
-  (`mini-jira-frontend-yassin2026.s3-website.eu-central-1.amazonaws.com`).
-  ⚠️ Use the *website endpoint*, not the bucket from the dropdown — CloudFront
-  treats it as a **custom origin**.
-- Protocol: **HTTP only** (S3 website endpoints don't support HTTPS)
-- Name: `s3-frontend`
+### Phase 1 — Create the distribution (frontend origin)
 
-### F2. Default cache behavior
+CloudFront console → **Create distribution**. On the **Specify origin** page:
 
-- Viewer protocol policy: **Redirect HTTP to HTTPS**
-- Allowed methods: **GET, HEAD**
-- Cache policy: **CachingOptimized**
+1. **Origin type** → choose **Other**. (*Not* "Amazon S3" — that type is only
+   for native S3 buckets; an S3 *website endpoint* is a plain HTTP URL, so it
+   must be a custom origin = "Other".)
+2. **Origin domain** → type the S3 **website endpoint**, hostname only:
+   ```
+   mini-jira-frontend-yassin2026.s3-website.eu-central-1.amazonaws.com
+   ```
+   No `https://`, no trailing `/`.
+3. **Origin path** → leave empty.
+4. **Settings → Origin settings** → click **Customize origin settings**:
+   - **Protocol** → **HTTP only** (S3 website endpoints have no HTTPS)
+   - **HTTP port** → `80`
+   - Leave the rest at default.
+5. **Cache settings** → leave **Use recommended cache settings**.
+6. If a **Default cache behavior** section appears on this page, set:
+   - **Viewer protocol policy** → **Redirect HTTP to HTTPS**
+   - **Allowed HTTP methods** → **GET, HEAD**
+   (If it's not shown, the defaults are fine — verify after creation.)
+7. **Next** → **Enable security** step → choose
+   **Do not enable security protections** (CloudFront WAF is not Free Tier) →
+   **Next**.
+8. **Review and create** → **Create distribution**.
 
-### F3. Distribution settings
+The distribution shows **Deploying** for ~5 min — continue with Phase 2 meanwhile.
 
-- Default root object: `index.html`
-- Price class: **Use North America and Europe** (cheapest)
-- Create the distribution.
+### Phase 2 — Add the ALB as a second origin
 
-### F4. Add the ALB origin
+Open the distribution → **Origins** tab → **Create origin**:
 
-Open the distribution → **Origins → Create origin**:
-- Origin domain: the **ALB DNS name** from D2
-- Protocol: **HTTP only**, HTTP port `80`
-- Name: `alb-api`
-- Save.
+- **Origin domain** → the ALB DNS name:
+  ```
+  mini-jira-alb-1363062914.eu-central-1.elb.amazonaws.com
+  ```
+- **Protocol** → **HTTP only**
+- **HTTP port** → `80`
+- **Name** → `alb-api`
+- **Create origin**.
 
-### F5. Add the `/api/*` behavior
+You now have 2 origins.
 
-Distribution → **Behaviors → Create behavior**:
-- Path pattern: **`/api/*`**
-- Origin: `alb-api`
-- Viewer protocol policy: **Redirect HTTP to HTTPS**
-- Allowed methods: **GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE**
-- Cache policy: **CachingDisabled**
-- Origin request policy: **AllViewer** (forwards the `Authorization` header,
-  body, and query strings to the backend)
-- Save.
+### Phase 3 — Route `/api/*` to the ALB
 
-### F6. SPA deep-link fix
+Distribution → **Behaviors** tab → **Create behavior**:
 
-Distribution → **Error pages → Create custom error response** (do this twice):
+- **Path pattern** → `/api/*`
+- **Origin and origin groups** → select **`alb-api`**
+- **Viewer protocol policy** → **Redirect HTTP to HTTPS**
+- **Allowed HTTP methods** → **GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE**
+- **Cache key and origin requests**:
+  - **Cache policy** → **CachingDisabled**
+  - **Origin request policy** → **AllViewer**
+- **Create behavior**.
 
-| HTTP error code | Customize response | Response page path | HTTP response code |
-|-----------------|--------------------|--------------------|--------------------|
-| `403` | Yes | `/index.html` | `200` |
-| `404` | Yes | `/index.html` | `200` |
+`CachingDisabled` keeps API responses fresh; `AllViewer` forwards the
+`Authorization` header and request body to the backend. CloudFront always
+matches `/api/*` before the default `*`, so API calls go to the ALB and
+everything else to S3 — automatically.
 
-This makes a refresh on `/kanban` (or any route) serve the SPA instead of an
-S3 error.
+### Phase 4 — SPA deep-link fix (error pages)
 
-Wait for the distribution **Status: Enabled / Last modified** (~5 min). Copy the
-**Distribution domain name** (`dxxxxxxxx.cloudfront.net`) — that is the live URL.
+So a browser refresh on `/kanban` serves the app instead of an S3 error.
+Distribution → **Error pages** tab → **Create custom error response** — do this
+**twice**:
+
+| HTTP error code | Customize error response | Response page path | HTTP Response code |
+|-----------------|--------------------------|--------------------|--------------------|
+| **403: Forbidden** | Yes | `/index.html` | **200: OK** |
+| **404: Not Found** | Yes | `/index.html` | **200: OK** |
+
+### Phase 5 — Default root object, then test
+
+1. Distribution → **General** tab → **Settings → Edit** →
+   **Default root object** → `index.html` → **Save changes**.
+2. Wait until the distribution **Last modified** shows a date (no longer
+   "Deploying" — ~5 min).
+3. Copy the **Distribution domain name** — `dxxxxxxxx.cloudfront.net`. **That is
+   your live app URL** (deliverable #48).
+4. Test:
+   - `https://dxxxxxxxx.cloudfront.net` → the app loads
+   - `https://dxxxxxxxx.cloudfront.net/api/health` → `{"status":"ok",...}`
+
+> If `/api/health` returns **502**, the ALB targets aren't healthy yet — finish
+> Part D. If the page is blank, recheck the **Default root object**.
 
 ---
 
